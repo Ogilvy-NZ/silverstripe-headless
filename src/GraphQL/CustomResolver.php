@@ -6,12 +6,6 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\CMS\Model\SiteTree;
 use GraphQL\Type\Definition\ResolveInfo;
 use SilverStripe\SiteConfig\SiteConfig;
-use Ogilvy\Models\Elemental\TeamMember\ElementTeamMemberProfile;
-use Ogilvy\Models\Elemental\FeaturedArticles\ElementFeaturedArticles;
-
-use App\PageTypes\ProductPage;
-use App\Models\Elemental\FeaturedBrands\ElementFeaturedBrands;
-use App\Models\Elemental\RecipeCards\ElementRecipeCards;
 
 class CustomResolver
 {
@@ -54,91 +48,31 @@ class CustomResolver
 
     return $sitetreeObj ? json_encode($array) : '';
   }
-
-  public static function resolveSortingData(DataObject $obj, array $args, array $context, ResolveInfo $info)
+  
+  public static function resolveBasePageData(DataObject $obj, array $args, array $context, ResolveInfo $info)
   {
-    if(str_contains($obj->ClassName, 'ElementFeaturedArticles')) $elementObject = ElementFeaturedArticles::get()->byID($obj->ID);
-    if(str_contains($obj->ClassName, 'ElementTeamMemberProfile')) $elementObject = ElementTeamMemberProfile::get()->byID($obj->ID);
+    $sitetreeObj = SiteTree::get()->byID($obj->ID);
+    $array = [];
 
-    $sortData = [];
-    if ($elementObject) {
-      if(str_contains($obj->ClassName, 'ElementFeaturedArticles')) $elementItems = $elementObject->Articles();
-      if(str_contains($obj->ClassName, 'ElementTeamMemberProfile')) $elementItems = $elementObject->MemberProfiles();
-      foreach($elementItems as $memberProfile) {
-        $sortData[$memberProfile->SortOrder] = $memberProfile->ID;
-      }
-      ksort($sortData);
+    if($sitetreeObj){
+      // populate aditional page data here
     }
 
-    return json_encode(array_values($sortData));
+    return $sitetreeObj ? json_encode($array) : '';
   }
 
-  public static function resolveStockistManyMany(DataObject $obj, array $args, array $context, ResolveInfo $info)
+  public static function resolveNavigationData(DataObject $obj, array $args, array $context, ResolveInfo $info)
   {
-    $productObj = ProductPage::get()->byID($obj->ID);
-
     $array = [];
-    foreach($productObj->Stockists() as $stockist) {
-      $array[] = [
-        'id' => $stockist->ID,
-        'whereToBuyLink' => $stockist->WhereToBuyLink,
-        'sortOrder' => $stockist->SortOrder
-      ];
-    }
+
+    // populate aditional navigation data here
 
     return json_encode($array);
   }
 
-  public static function resolveNextProduct(DataObject $obj, array $args, array $context, ResolveInfo $info)
+  public static function resolveExtraData(DataObject $obj, array $args, array $context, ResolveInfo $info)
   {
-    $currentProduct = ProductPage::get()->byID($obj->ID);
-    $nextProduct = ProductPage::get()->filter(['ParentID' => $currentProduct->ParentID, 'Sort:GreaterThan' => $currentProduct->Sort])->first();
-
     $array = [];
-    if ($nextProduct && $nextProduct->exists()) {
-      $array = [
-        'title' => $nextProduct->Title,
-        'link' => $nextProduct->Link()
-      ];
-    } else {
-      $nextProduct = ProductPage::get()->filter(['ParentID' => $currentProduct->ParentID])->first();
-      if ($nextProduct && $nextProduct->exists()) {
-        $array = [
-          'title' => $nextProduct->Title,
-          'link' => $nextProduct->Link()
-        ];
-      }
-    }
-
-    return json_encode($array);
-  }
-
-  public static function resolveBrandsManyMany(DataObject $obj, array $args, array $context, ResolveInfo $info)
-  {
-    $dataObj = ElementFeaturedBrands::get()->byID($obj->ID);
-
-    $array = [];
-    foreach($dataObj->Brands() as $brand) {
-      $array[] = [
-        'id' => $brand->ID,
-        'sortOrder' => $brand->SortOrder
-      ];
-    }
-
-    return json_encode($array);
-  }
-
-  public static function resolveRecipesManyMany(DataObject $obj, array $args, array $context, ResolveInfo $info)
-  {
-    $dataObj = ElementRecipeCards::get()->byID($obj->ID);
-
-    $array = [];
-    foreach($dataObj->Recipes() as $recipe) {
-      $array[] = [
-        'id' => $recipe->ID,
-        'sortOrder' => $recipe->SortOrder
-      ];
-    }
 
     return json_encode($array);
   }
